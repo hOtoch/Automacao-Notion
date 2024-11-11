@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 import datetime
 
+
 load_dotenv()
 
 headers = {
@@ -46,6 +47,7 @@ def adicionar_propriedade_ultimo_comentario_ao_banco_de_dados():
 
 def atualizar_propriedade_ultimo_comentario(card_id, valor):
     url = f"https://api.notion.com/v1/pages/{card_id}"
+
     payload = {
         "properties": {
             "Último comentário": {
@@ -55,6 +57,7 @@ def atualizar_propriedade_ultimo_comentario(card_id, valor):
             }
         }
     }
+   
     response = requests.patch(url, headers=headers, json=payload)
     if response.status_code == 200:
         print("Propriedade 'Último comentário' atualizada com sucesso no card!")
