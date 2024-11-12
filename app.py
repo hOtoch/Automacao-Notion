@@ -6,6 +6,7 @@ import json
 from propriedades import *
 from time import sleep
 import re
+import schedule
 
 load_dotenv()
 
@@ -94,9 +95,58 @@ def atualizar_emoji(card):
 
     print(f"Card {card['id']} atualizado com sucesso!")
 
-def enviar_notificacao_slack(nome_card):
+def job():
+    cards_atuais = obter_todos_os_cards()
+    enviar_notificacao_slack(cards_atuais)
+
+def enviar_notificacao_slack(cards):
+    cardsNovos, cards2h, cards6h, cards12h, cards24h, cards48h = [], [], [], [], [], []
+
+    for card in cards:
+        nome = card['properties']['Projeto']['title'][0]['text']['content']
+        ultimo_comentario_str = card['properties']["Último comentário"]["date"]["start"]
+        ultimo_comentario = datetime.datetime.fromisoformat(ultimo_comentario_str.replace("Z", "+00:00")).replace(tzinfo=None)
+        agora = datetime.datetime.now()
+        diferenca = agora - ultimo_comentario
+        diferenca_em_horas = diferenca.total_seconds() / 3600
+
+        if diferenca_em_horas > 2 and  diferenca_em_horas < 6:
+            cards2h.append(nome)
+        elif diferenca_em_horas > 6 and diferenca_em_horas< 12:
+            cards6h.append(nome)
+        elif diferenca_em_horas > 12 and diferenca_em_horas< 24:
+            cards12h.append(nome)
+        elif diferenca_em_horas > 24 and diferenca_em_horas< 48:
+            cards24h.append(nome)
+        elif diferenca_em_horas > 48 and diferenca.days < 30:
+            cards48h.append(nome)
+        elif diferenca_em_horas < 2:
+            cardsNovos.append(nome)
+
+        mensagem = f"""
+            📢 Notificação Comercial Diária - Leads Pendentes
+            Bom dia time! Aqui está o resumo dos leads que estão aguardando
+            atualização:
+
+            Novas entradas: 🔥
+            {cardsNovos}
+            Leads sem contato há 2 horas ⏰:
+            {cards2h}
+            Leads sem contato há 6 horas ❄:
+            {cards6h}
+            Leads sem contato há 12 horas ❄❄:
+            {cards12h}
+            Leads sem contato há 24 horas 🥶:
+            {cards24h}
+            Leads sem contato há 48 horas 🚨:
+            {cards48h}
+            Por favor, entrem em contato com esses leads o mais rápido possível para
+            manter o fluxo de atendimento e aumentar as chances de fechamento!
+
+        """
+
     payload = {
-        "text": "teste"
+        "text": mensagem
     }
     response = requests.post(webhook_url, data=json.dumps(payload), headers={'Content-Type': 'application/json'})
     if response.status_code != 200:
@@ -116,15 +166,15 @@ if __name__== '__main__':
         ids_atuais.add(card['id'])
         atualizar_emoji(card)
 
+    schedule.every().day.at("08:00").do(job)
+
 
     # Começa o monitoramento
     while True:
         # Atualiza a propriedade e o emoji para cards novos 
         cards_atuais, ids_atuais = monitorar_novos_cards(ids_atuais)
 
-        # Enviar uma notificaçao para o slack
-        # enviar_notificacao_slack(cards_atuais)
-
+        schedule.run_pending()
         sleep(30)
 
 
