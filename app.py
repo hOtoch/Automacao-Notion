@@ -259,7 +259,7 @@ if __name__== '__main__':
         ids_atuais.add(card['id'])
        
 
-    schedule.every().day.at("10:40").do(job)
+    schedule.every().day.at("08:00").do(job)
 
     # Inicia a thread de monitoramento
     threading.Thread(target=monitorar_novos_cards_thread, args=(ids_atuais,)).start()
