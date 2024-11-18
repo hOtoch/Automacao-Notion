@@ -65,7 +65,10 @@ def monitorar_novos_cards(ids_atuais):
 @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
 def atualizar_emoji(card):
     
+    nome = card['properties']['Name']['title'][0]['text']['content']
     ultimo_contato_data = card['properties'].get("Último contato", {}).get("date", {})
+    if ultimo_contato_data is None:
+        atualizar_propriedade_ultimo_contato(card['id'], card['created_time'],nome)
     ultimo_contato_str = ultimo_contato_data.get("start")
     
     if not ultimo_contato_str:
@@ -109,7 +112,7 @@ def atualizar_emoji(card):
         print(f"Card {card['id']} não possui título em 'Projeto'. Pulando atualização do emoji.")
         return
     
-    nome = card['properties']['Name']['title'][0]['text']['content']
+
     nome_card_sem_emoji = re.sub(r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F700-\U0001F77F\U0001F780-\U0001F7FF\U0001F800-\U0001F8FF\U0001F900-\U0001F9FF\U0001FA00-\U0001FA6F\U0001FA70-\U0001FAFF\U00002702-\U000027B0\U000024C2-\U0001F251]', '', nome)
 
     payload = {
