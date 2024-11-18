@@ -10,7 +10,9 @@ import schedule
 import threading
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+
 load_dotenv()
+
 headers = {
     "Authorization": f"Bearer {os.getenv('NOTION_TOKEN')}",
     "Notion-Version": "2022-06-28",
@@ -76,6 +78,9 @@ def atualizar_emoji(card):
     ultimo_contato_data = card['properties'].get("Último contato", {}).get("date", {})
     if ultimo_contato_data is None:
         atualizar_propriedade_ultimo_contato(card['id'], card['created_time'],nome)
+        updated_card = obter_card_por_id(card['id'])
+        card['properties'] = updated_card['properties']
+        ultimo_contato_data = card['properties'].get("Último contato", {}).get("date", {})
     ultimo_contato_str = ultimo_contato_data.get("start")
     
     if not ultimo_contato_str:
