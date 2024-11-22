@@ -145,6 +145,9 @@ def job():
 
 def enviar_notificacao_slack(cards):
     cardsNovos, cards2h, cards6h, cards12h, cards24h, cards48h = [], [], [], [], [], []
+    agora = datetime.datetime.now()
+    if agora.weekday() >= 5:
+        return
 
     for card in cards:
         projeto_property = card['properties'].get('Name', {})
@@ -157,7 +160,6 @@ def enviar_notificacao_slack(cards):
         nome_card_sem_emoji = re.sub(r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F700-\U0001F77F\U0001F780-\U0001F7FF\U0001F800-\U0001F8FF\U0001F900-\U0001F9FF\U0001FA00-\U0001FA6F\U0001FA70-\U0001FAFF\U00002702-\U000027B0\U000024C2-\U0001F251]', '', nome)
         ultimo_contato_str = card['properties']["Último contato"]["date"]["start"]
         ultimo_contato = datetime.datetime.fromisoformat(ultimo_contato_str.replace("Z", "+00:00")).replace(tzinfo=None)
-        agora = datetime.datetime.now()
         diferenca = agora - ultimo_contato
         diferenca_em_horas = diferenca.total_seconds() / 3600
 
