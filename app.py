@@ -269,7 +269,7 @@ if __name__== '__main__':
     schedule.every().day.at("08:00").do(job)
 
     # Inicia a thread de monitoramento
-    threading.Thread(target=monitorar_novos_cards_thread, args=(ids_atuais,)).start()
+    threading.Thread(target=monitorar_novos_cards_thread).start()
     # Inicia a thread de agendamento
     threading.Thread(target=schedule_thread).start()
 
