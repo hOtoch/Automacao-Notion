@@ -41,7 +41,7 @@ def obter_todos_os_cards():
 
     return todos_os_cards
 
-def monitorar_novos_cards(ids_atuais):
+def monitorar_novos_cards():
     cards_novos = obter_todos_os_cards()
     ids_novos = set()
  
@@ -56,9 +56,6 @@ def monitorar_novos_cards(ids_atuais):
             nome = "Sem título"
         else:
             nome = card['properties']['Name']['title'][0]['text']['content']
-
-        if card['id'] not in ids_atuais:
-            atualizar_propriedade_ultimo_contato(card['id'], card['created_time'],nome)
         
         atualizar_emoji(card)
 
@@ -76,13 +73,14 @@ def atualizar_emoji(card):
     
     nome = card['properties']['Name']['title'][0]['text']['content']
     ultimo_contato_data = card['properties'].get("Último contato", {}).get("date", {})
+
     if ultimo_contato_data is None:
         atualizar_propriedade_ultimo_contato(card['id'], card['created_time'],nome)
         updated_card = obter_card_por_id(card['id'])
         card['properties'] = updated_card['properties']
         ultimo_contato_data = card['properties'].get("Último contato", {}).get("date", {})
+
     ultimo_contato_str = ultimo_contato_data.get("start")
-    
     if not ultimo_contato_str:
         print(f"[Aviso] Card {card['id']} não possui 'Último contato'. Pulando atualização do emoji.")
         return
@@ -221,10 +219,10 @@ def obter_card_por_id(card_id):
     response.raise_for_status()
     return response.json()
 
-def monitorar_novos_cards_thread(ids_atuais):
+def monitorar_novos_cards_thread():
     print("---------------- Monitoramento iniciado! -------------------------")
     while True:
-        monitorar_novos_cards(ids_atuais)
+        monitorar_novos_cards()
         sleep(30)  
 
 
