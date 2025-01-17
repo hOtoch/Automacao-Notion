@@ -47,17 +47,22 @@ def monitorar_novos_cards():
  
 
     for card in cards_novos:
-        ids_novos.add(card['id'])
-        projeto_property = card['properties'].get('Name', {})
-        title_list = projeto_property.get('title', [])
+        created_time_str = card.get('created_time')
+        created_time = datetime.datetime.fromisoformat(created_time_str.replace("Z", "+00:00"))
+        # print(f"Mes:{created_time.month} Ano: {created_time.year}")
+        # print(f"Mes Atual:{now.month} Ano Atual: {now.year}\n---------------------------------------------------\n")
+        if created_time.year == now.year and created_time.month == now.month:
+            ids_novos.add(card['id'])
+            projeto_property = card['properties'].get('Name', {})
+            title_list = projeto_property.get('title', [])
 
-        # Verificar se a lista 'title' não está vazia
-        if not title_list:
-            nome = "Sem título"
-        else:
-            nome = card['properties']['Name']['title'][0]['text']['content']
-        
-        atualizar_emoji(card)
+            # Verificar se a lista 'title' não está vazia
+            if not title_list:
+                nome = "Sem título"
+            else:
+                nome = card['properties']['Name']['title'][0]['text']['content']
+            
+            atualizar_emoji(card)
 
     return cards_novos, ids_novos
 
@@ -141,6 +146,9 @@ def job():
     cards_atuais = obter_todos_os_cards()
     enviar_notificacao_slack(cards_atuais)
 
+def formatar_lista(lista):
+    return '\n'.join(f"> {item}" for item in lista) if lista else '> Nenhum'
+
 def enviar_notificacao_slack(cards):
     cardsNovos, cards2h, cards6h, cards12h, cards24h, cards48h = [], [], [], [], [], []
     agora = datetime.datetime.now()
@@ -148,34 +156,38 @@ def enviar_notificacao_slack(cards):
         return
 
     for card in cards:
-        projeto_property = card['properties'].get('Name', {})
-        title_list = projeto_property.get('title', [])
+        created_time_str = card.get('created_time')
+        created_time = datetime.datetime.fromisoformat(created_time_str.replace("Z", "+00:00"))
+        # print(f"Mes:{created_time.month} Ano: {created_time.year}")
+        # print(f"Mes Atual:{now.month} Ano Atual: {now.year}\n---------------------------------------------------\n")
+        if created_time.year == now.year and created_time.month == now.month:
+            projeto_property = card['properties'].get('Name', {})
+            title_list = projeto_property.get('title', [])
 
-        # Verificar se a lista 'title' não está vazia
-        if not title_list:
-            continue
-        nome = card['properties']['Name']['title'][0]['text']['content']
-        nome_card_sem_emoji = re.sub(r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F700-\U0001F77F\U0001F780-\U0001F7FF\U0001F800-\U0001F8FF\U0001F900-\U0001F9FF\U0001FA00-\U0001FA6F\U0001FA70-\U0001FAFF\U00002702-\U000027B0\U000024C2-\U0001F251]', '', nome)
-        ultimo_contato_str = card['properties']["Último contato"]["date"]["start"]
-        ultimo_contato = datetime.datetime.fromisoformat(ultimo_contato_str.replace("Z", "+00:00")).replace(tzinfo=None)
-        diferenca = agora - ultimo_contato
-        diferenca_em_horas = diferenca.total_seconds() / 3600
+            # Verificar se a lista 'title' não está vazia
+            if not title_list:
+                continue
+            nome = card['properties']['Name']['title'][0]['text']['content']
+            nome_card_sem_emoji = re.sub(r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F700-\U0001F77F\U0001F780-\U0001F7FF\U0001F800-\U0001F8FF\U0001F900-\U0001F9FF\U0001FA00-\U0001FA6F\U0001FA70-\U0001FAFF\U00002702-\U000027B0\U000024C2-\U0001F251]', '', nome)
+            ultimo_contato_str = card['properties']["Último contato"]["date"]["start"]
+            ultimo_contato = datetime.datetime.fromisoformat(ultimo_contato_str.replace("Z", "+00:00")).replace(tzinfo=None)
+            diferenca = agora - ultimo_contato
+            diferenca_em_horas = diferenca.total_seconds() / 3600
 
-        if diferenca_em_horas >= 2 and  diferenca_em_horas < 6:
-            cards2h.append(nome_card_sem_emoji)
-        elif diferenca_em_horas >= 6 and diferenca_em_horas< 12:
-            cards6h.append(nome_card_sem_emoji)
-        elif diferenca_em_horas >= 12 and diferenca_em_horas< 24:
-            cards12h.append(nome_card_sem_emoji)
-        elif diferenca_em_horas >= 24 and diferenca_em_horas< 48:
-            cards24h.append(nome_card_sem_emoji)
-        elif diferenca_em_horas >= 48 and ultimo_contato.month == agora.month:
-            cards48h.append(nome_card_sem_emoji)
-        elif diferenca_em_horas < 2:
-            cardsNovos.append(nome_card_sem_emoji)
+            if diferenca_em_horas >= 2 and  diferenca_em_horas < 6:
+                cards2h.append(nome_card_sem_emoji)
+            elif diferenca_em_horas >= 6 and diferenca_em_horas< 12:
+                cards6h.append(nome_card_sem_emoji)
+            elif diferenca_em_horas >= 12 and diferenca_em_horas< 24:
+                cards12h.append(nome_card_sem_emoji)
+            elif diferenca_em_horas >= 24 and diferenca_em_horas< 48:
+                cards24h.append(nome_card_sem_emoji)
+            elif diferenca_em_horas >= 48 and ultimo_contato.month == agora.month:
+                cards48h.append(nome_card_sem_emoji)
+            elif diferenca_em_horas < 2:
+                cardsNovos.append(nome_card_sem_emoji)
 
-    def formatar_lista(lista):
-        return '\n'.join(f"> {item}" for item in lista) if lista else '> Nenhum'
+    
 
     data_hoje = datetime.datetime.now().strftime('%d/%m/%Y')
 
@@ -239,31 +251,64 @@ if __name__== '__main__':
     ids_atuais = set()
     # adicionar_propriedade_ultimo_contato_ao_banco_de_dados()
     cards_atuais = obter_todos_os_cards()
+    # print(cards_atuais)
 
-    # with open('cards.json', 'w') as f:
-    #     json.dump(cards_atuais, f, indent=4)
+    with open('cards.json', 'w') as f:
+        status_count = {}
+        cards = []
+        now = datetime.datetime.now()
+        
+        for card in cards_atuais:
+            created_time_str = card.get('created_time')
+            created_time = datetime.datetime.fromisoformat(created_time_str.replace("Z", "+00:00"))
+            # print(f"Mes:{created_time.month} Ano: {created_time.year}")
+            # print(f"Mes Atual:{now.month} Ano Atual: {now.year}\n---------------------------------------------------\n")
+            if created_time.year == now.year and created_time.month == now.month:
+                # print(created_time)
+                status = card['properties'].get('Status', {})
+                if status:
+                    select = status.get('select', {})
+                    if select:
+
+                        status_name = select.get('name')
+                        if status_name:
+                            if status_name in status_count:
+                                status_count[status_name] += 1
+                            else:
+                                status_count[status_name] = 1
+                cards.append({
+                    'id': card['id'],
+                    'created_time': created_time_str
+                })
+        json.dump(status_count, f, indent=4, ensure_ascii=False)
+        # json.dump(cards, f, indent=4, ensure_ascii=False)
    
 
     # Faz a atribuiçao inicial do ultimo contato = created_time
     for card in cards_atuais:
-        ultimo_contato = card['properties'].get("Último contato", {}).get("date")
-   
-        if ultimo_contato is None or ultimo_contato.get("start") is None:
-            projeto_property = card['properties'].get('Name', {})
-            title_list = projeto_property.get('title', [])
+        created_time_str = card.get('created_time')
+        created_time = datetime.datetime.fromisoformat(created_time_str.replace("Z", "+00:00"))
+        # print(f"Mes:{created_time.month} Ano: {created_time.year}")
+        # print(f"Mes Atual:{now.month} Ano Atual: {now.year}\n---------------------------------------------------\n")
+        if created_time.year == now.year and created_time.month == now.month:
+            ultimo_contato = card['properties'].get("Último contato", {}).get("date")
+    
+            if ultimo_contato is None or ultimo_contato.get("start") is None:
+                projeto_property = card['properties'].get('Name', {})
+                title_list = projeto_property.get('title', [])
 
-            # Verificar se a lista 'title' não está vazia
-            if not title_list:
-                nome = "Sem título"
-            else:
-                nome = card['properties']['Name']['title'][0]['text']['content']
-            atualizar_propriedade_ultimo_contato(card['id'], card['created_time'],nome)
-            # Buscar o card atualizado
-            updated_card = obter_card_por_id(card['id'])
-            card['properties'] = updated_card['properties']
-            # Atualizar a variável 'ultimo_contato'
-            ultimo_contato = card['properties']['Último contato']['date']
-        ids_atuais.add(card['id'])
+                # Verificar se a lista 'title' não está vazia
+                if not title_list:
+                    nome = "Sem título"
+                else:
+                    nome = card['properties']['Name']['title'][0]['text']['content']
+                atualizar_propriedade_ultimo_contato(card['id'], card['created_time'],nome)
+                # Buscar o card atualizado
+                updated_card = obter_card_por_id(card['id'])
+                card['properties'] = updated_card['properties']
+                # Atualizar a variável 'ultimo_contato'
+                ultimo_contato = card['properties']['Último contato']['date']
+            ids_atuais.add(card['id'])
        
 
     schedule.every().day.at("08:00").do(job)
