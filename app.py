@@ -49,9 +49,10 @@ def monitorar_novos_cards():
     for card in cards_novos:
         created_time_str = card.get('created_time')
         created_time = datetime.datetime.fromisoformat(created_time_str.replace("Z", "+00:00"))
-        # print(f"Mes:{created_time.month} Ano: {created_time.year}")
+        
         # print(f"Mes Atual:{now.month} Ano Atual: {now.year}\n---------------------------------------------------\n")
         if created_time.year == now.year and created_time.month == now.month:
+            # print(f"Mes:{created_time.month} Ano: {created_time.year}")
             ids_novos.add(card['id'])
             projeto_property = card['properties'].get('Name', {})
             title_list = projeto_property.get('title', [])
@@ -158,9 +159,10 @@ def enviar_notificacao_slack(cards):
     for card in cards:
         created_time_str = card.get('created_time')
         created_time = datetime.datetime.fromisoformat(created_time_str.replace("Z", "+00:00"))
-        # print(f"Mes:{created_time.month} Ano: {created_time.year}")
+        
         # print(f"Mes Atual:{now.month} Ano Atual: {now.year}\n---------------------------------------------------\n")
         if created_time.year == now.year and created_time.month == now.month:
+            print(f"Mes:{created_time.month} Ano: {created_time.year}")
             projeto_property = card['properties'].get('Name', {})
             title_list = projeto_property.get('title', [])
 
@@ -311,7 +313,7 @@ if __name__== '__main__':
             ids_atuais.add(card['id'])
        
 
-    schedule.every().day.at("08:00").do(job)
+    schedule.every().day.at("13:35").do(job)
 
     # Inicia a thread de monitoramento
     threading.Thread(target=monitorar_novos_cards_thread).start()
